@@ -1,0 +1,26 @@
+# Data (large, downloaded separately via src/data/download.py)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Model checkpoints / logs
+checkpoints/*
+logs/*
+!checkpoints/.gitkeep
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Editors / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Word temp files
+~$*.docx
