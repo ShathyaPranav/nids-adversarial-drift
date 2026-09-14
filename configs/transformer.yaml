@@ -1,0 +1,18 @@
+data:
+  processed_dir: data/processed
+
+model:
+  d_model: 64
+  n_heads: 4
+  n_layers: 3
+  d_ff: 128
+  dropout: 0.1
+
+train:
+  batch_size: 512
+  epochs: 20
+  lr: 0.0003
+  weight_decay: 0.00001
+  patience: 4
+  seed: 42
+  checkpoint_path: checkpoints/transformer_best.pt
