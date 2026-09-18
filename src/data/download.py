@@ -5,7 +5,7 @@ Two sources:
                bucket (no credentials needed). Fast, good for pipeline development,
                but this is the *raw* release with known label-corruption issues
                (Liu et al., 2022).
-  --corrected  Liu et al.'s relabeled/corrected release (~9.7 GB zip). This is what
+  --corrected  Liu et al.'s relabeled/corrected release (~10.4 GB zip, parallel + resumable). This is what
                the synopsis commits to training on. No account needed, but large.
 
 Usage:
@@ -15,9 +15,9 @@ Usage:
 import argparse
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 
 SAMPLE_S3_KEY = (
@@ -26,6 +26,7 @@ SAMPLE_S3_KEY = (
 )
 SAMPLE_BUCKET = "cse-cic-ids2018"
 
+CORRECTED_SIZE_BYTES = 10426851729
 CORRECTED_URL = (
     "https://intrusion-detection.distrinet-research.be/"
     "CNS2022/Datasets/CSECICIDS2018_improved.zip"
@@ -50,21 +51,14 @@ def download_sample() -> None:
 
 
 def download_corrected() -> None:
+    from parallel_download import main as parallel_main
+
     dest = RAW_DIR / "CSECICIDS2018_improved.zip"
-    if dest.exists():
+    if dest.exists() and dest.stat().st_size == CORRECTED_SIZE_BYTES:
         print(f"Already present: {dest}")
         return
-    print(f"Downloading corrected release (~9.7 GB) from {CORRECTED_URL}")
-    print("This will take a while depending on connection speed.")
-
-    def _progress(block_num: int, block_size: int, total_size: int) -> None:
-        done = block_num * block_size
-        pct = min(100, done * 100 // total_size) if total_size > 0 else 0
-        sys.stdout.write(f"\r  {pct}% ({done / 1e9:.2f} GB)")
-        sys.stdout.flush()
-
-    urllib.request.urlretrieve(CORRECTED_URL, dest, reporthook=_progress)
-    print(f"\nSaved to {dest}")
+    print(f"Downloading corrected release (~10.4 GB) from {CORRECTED_URL}")
+    parallel_main()
 
 
 def main() -> None:
