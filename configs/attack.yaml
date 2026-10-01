@@ -1,0 +1,38 @@
+checkpoint: checkpoints/transformer_best.pt
+processed_dir: data/processed
+benign_class: BENIGN
+
+# Which features the attacker may change. Everything not listed as immutable is mutable.
+# Assumption: the attacker is the flow initiator, so it shapes its own (forward) packets and
+# their timing, but not the service it targets, TCP flag semantics, or the victim's replies.
+constraints:
+  immutable_exact:
+    - Dst Port
+    - Protocol
+    - ICMP Code
+    - ICMP Type
+    - FWD Init Win Bytes
+    - Bwd Init Win Bytes
+    - Fwd Seg Size Min
+  immutable_contains:
+    - Flag   # TCP flag counts
+    - Bwd    # responder-side features
+
+attack:
+  eps: 0.5          # L-inf budget per mutable feature, in standardized units
+  step_size: 0.05
+  steps: 40
+  lam: 10.0         # weight of the drift-proxy term in the joint objective
+  proxy: marginal   # marginal | mmd
+  representation: both   # features | confidence | both
+  attacker_fraction: 0.2 # share of each window's detected attack flows that are perturbed
+
+drift:
+  alpha: 0.05
+  window_size: 1000
+  n_reference: 2000
+
+eval:
+  n_windows: 10
+  seeds: [0, 1, 2]
+  out: results/attack_transformer.json
