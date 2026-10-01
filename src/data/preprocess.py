@@ -141,6 +141,8 @@ def main() -> None:
     scaler = StandardScaler()
     scaler.fit(signed_log1p(train[feature_cols].to_numpy()))
 
+    np.savez(out_dir / "scaler.npz", mean=scaler.mean_, scale=scaler.scale_)
+
     class_names = label_encoder.classes_.tolist()
     class_counts = {}
     for name, split_df in [("train", train), ("val", val), ("test", test)]:
