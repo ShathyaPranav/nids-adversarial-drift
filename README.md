@@ -48,6 +48,40 @@ Caveat: the split is random over flows, so near-identical flows from the same at
 can land in both train and test. That inflates scores relative to a temporal or per-day split,
 which matters for the concept-drift part of the project.
 
+## Adversarial stress-test (first run, Transformer only)
+
+`python src/run_attack.py --config configs/attack.yaml` perturbs a share of the attack flows
+in each 1,000-flow test window and compares three attacks with the same step budget:
+`pgd` (classifier only), `decoupled` (classifier, then drift, in two stages) and `joint`
+(classifier loss + lambda * drift proxy in one objective). The drift detector is a
+Bonferroni-corrected KS test per feature plus one on classifier confidence.
+
+Constraints (`src/attack/constraints.py`): 43 of 83 features are mutable (attacker-side packet
+sizes, counts, timing); destination port, protocol, TCP flags and responder-side features are
+fixed. Budget eps = 0.5 standardized units, no negative values, Min <= Mean <= Max kept.
+
+Mean over 3 seeds x 10 windows (lambda = 10, marginal proxy):
+
+| perturbed flows / window | attack | evasion | drift detected | KS rejections |
+|---|---|---|---|---|
+| ~42 (5%)  | pgd / decoupled / joint | 0.45 / 0.20 / 0.45 | 0.07 / 0.00 / 0.07 | 0.2 / 0.0 / 0.2 |
+| ~83 (10%) | pgd / decoupled / joint | 0.45 / 0.17 / 0.46 | 0.57 / 0.57 / 0.63 | 1.0 / 0.9 / 0.5 |
+| ~125 (15%) | pgd / decoupled / joint | 0.45 / 0.16 / 0.45 | 1.00 / 1.00 / 1.00 | 6.7 / 4.2 / 4.5 |
+| ~167 (20%) | pgd / decoupled / joint | 0.46 / 0.16 / 0.46 | 1.00 / 1.00 / 1.00 | 17.7 / 7.6 / 10.9 |
+
+Constraint violation rate is 0 for every attack; clean windows are never flagged.
+
+What this shows so far:
+- The joint attack keeps PGD's evasion rate (~0.45); the decoupled attack loses about two
+  thirds of it because its drift stage undoes the evasion.
+- The joint attack does not yet lower the window-level drift detection rate compared with
+  plain PGD. It triggers fewer per-feature KS rejections, but the confidence test still fires.
+- Whether a window is flagged depends mainly on how many flows are perturbed.
+
+Not done yet: lambda and proxy/representation ablations, the other three architectures.
+Limits: constraints do not enforce exact identities between features (total = mean x count)
+or integer counts, so a valid adversarial flow is plausible rather than proven realizable.
+
 ## Layout
 
 ```
@@ -58,6 +92,11 @@ src/
     dataset.py       # PyTorch Dataset/DataLoader
   models/
     transformer.py   # Model 4: self-attention flow classifier
+  attack/
+    constraints.py   # mutable/immutable features, budget, validity checks
+    drift.py         # KS drift detector + differentiable proxies
+    attacks.py       # pgd, decoupled, joint
+  run_attack.py      # adversarial stress-test
   utils/
     metrics.py        # macro-F1 + per-class rare-class reporting
   train.py
