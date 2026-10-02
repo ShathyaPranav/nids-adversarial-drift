@@ -25,7 +25,9 @@ attack:
   lam: 10.0         # weight of the drift-proxy term in the joint objective
   proxy: marginal   # marginal | mmd
   representation: both   # features | confidence | both
-  attacker_fraction: 0.2 # share of each window's detected attack flows that are perturbed
+  # share of each window's detected attack flows that the attacker perturbs; drift detection
+  # depends strongly on this, so it is swept rather than fixed
+  attacker_fractions: [0.05, 0.10, 0.15, 0.20]
 
 drift:
   alpha: 0.05
