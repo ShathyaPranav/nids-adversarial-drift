@@ -1,0 +1,36 @@
+
+checkpoint: checkpoints/mlp_best.pt
+processed_dir: data/processed
+benign_class: BENIGN
+
+constraints:
+  immutable_exact:
+    - Dst Port
+    - Protocol
+    - ICMP Code
+    - ICMP Type
+    - FWD Init Win Bytes
+    - Bwd Init Win Bytes
+    - Fwd Seg Size Min
+  immutable_contains:
+    - Flag
+    - Bwd
+
+attack:
+  eps: 0.5
+  step_size: 0.05
+  steps: 40
+  lam: 10.0
+  proxy: marginal
+  representation: both
+  attacker_fractions: [0.05, 0.10, 0.15, 0.20]
+
+drift:
+  alpha: 0.05
+  window_size: 1000
+  n_reference: 2000
+
+eval:
+  n_windows: 10
+  seeds: [0, 1, 2]
+  out: results/attack_mlp.json
