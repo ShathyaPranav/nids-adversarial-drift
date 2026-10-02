@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data.dataset import FlowDataset  # noqa: E402
-from models.transformer import FlowTransformer  # noqa: E402
+from models import build_model  # noqa: E402
 from utils.metrics import compute_metrics, format_report  # noqa: E402
 
 
@@ -30,7 +30,7 @@ def main() -> None:
     test_ds = FlowDataset(f"{cfg['data']['processed_dir']}/test.npz")
     test_loader = DataLoader(test_ds, batch_size=cfg["train"]["batch_size"])
 
-    model = FlowTransformer(n_features=meta["n_features"], n_classes=len(class_names), **cfg["model"]).to(device)
+    model = build_model(cfg["model"], meta["n_features"], len(class_names)).to(device)
     model.load_state_dict(ckpt["model_state"])
     model.eval()
 

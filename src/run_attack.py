@@ -23,13 +23,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from attack.attacks import MODES, run_attack  # noqa: E402
 from attack.constraints import FeatureConstraints  # noqa: E402
 from attack.drift import KSDriftDetector  # noqa: E402
-from models.transformer import FlowTransformer  # noqa: E402
+from models import build_model  # noqa: E402
 
 
 def load_classifier(checkpoint: str, device):
     ckpt = torch.load(checkpoint, map_location=device)
     meta = ckpt["meta"]
-    model = FlowTransformer(n_features=meta["n_features"], n_classes=len(meta["classes"]), **ckpt["config"]["model"])
+    model = build_model(ckpt["config"]["model"], meta["n_features"], len(meta["classes"]))
+    # cuDNN refuses input gradients for recurrent layers in eval mode, which the attacks need
+    if any(isinstance(m, torch.nn.RNNBase) for m in model.modules()):
+        torch.backends.cudnn.enabled = False
     model.load_state_dict(ckpt["model_state"])
     return model.to(device).eval(), meta
 

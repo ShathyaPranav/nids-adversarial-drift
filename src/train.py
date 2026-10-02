@@ -1,4 +1,4 @@
-"""Train Model 4 (FlowTransformer) on the preprocessed CSE-CIC-IDS2018 splits.
+"""Train a registered model (see src/models/__init__.py) on the preprocessed CSE-CIC-IDS2018 splits.
 
 Usage:
     python src/train.py --config configs/transformer.yaml
@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data.dataset import FlowDataset, load_meta  # noqa: E402
-from models.transformer import FlowTransformer  # noqa: E402
+from models import build_model  # noqa: E402
 from utils.metrics import compute_metrics, format_report  # noqa: E402
 
 
@@ -58,7 +58,7 @@ def main() -> None:
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=batch_size)
 
-    model = FlowTransformer(n_features=n_features, n_classes=len(class_names), **cfg["model"]).to(device)
+    model = build_model(cfg["model"], n_features, len(class_names)).to(device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=cfg["train"]["lr"], weight_decay=cfg["train"]["weight_decay"]
     )
