@@ -1,0 +1,23 @@
+Test set results:
+Accuracy: 0.9994
+Macro-F1: 0.8893
+
+Per-class:
+  BENIGN               P=0.998 R=0.998 F1=0.998 n=27398
+  Botnet Ares          P=1.000 R=1.000 F1=1.000 n=21469
+  DDoS-HOIC            P=1.000 R=1.000 F1=1.000 n=30000
+  DDoS-LOIC-HTTP       P=1.000 R=1.000 F1=1.000 n=30000
+  DDoS-LOIC-UDP        P=1.000 R=1.000 F1=1.000 n=416  <- rare class
+  DoS GoldenEye        P=1.000 R=0.999 F1=0.999 n=4029
+  DoS Hulk             P=1.000 R=1.000 F1=1.000 n=30000
+  DoS Slowloris        P=0.993 R=0.999 F1=0.996 n=1615
+  FTP-BruteForce       P=0.818 R=1.000 F1=0.900 n=9  <- rare class
+  Infiltration - Communication Victim Attacker P=0.969 R=1.000 F1=0.984 n=31  <- rare class
+  Infiltration - Dropbox Download P=0.500 R=0.059 F1=0.105 n=17  <- rare class
+  Infiltration - NMAP Portscan P=0.995 R=0.998 F1=0.997 n=7732
+  SSH-BruteForce       P=1.000 R=1.000 F1=1.000 n=14129
+  Web Attack - Brute Force P=0.857 R=0.900 F1=0.878 n=40  <- rare class
+  Web Attack - SQL     P=1.000 R=0.250 F1=0.400 n=8  <- rare class
+  Web Attack - XSS     P=1.000 R=0.944 F1=0.971 n=18  <- rare class
+
+7 rare class(es) present (< 1000 test samples) -- macro-F1 is sensitive to these, check them individually above.
