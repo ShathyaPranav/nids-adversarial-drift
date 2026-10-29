@@ -1,6 +1,6 @@
 """Model 4: attention-based (Transformer) classifier over CICFlowMeter flow features.
 
-The 78 flow features are tabular (one row = one flow), not a token sequence, so this
+The 83 flow features are tabular (one row = one flow), not a token sequence, so this
 follows the FT-Transformer approach (Gorishniy et al., 2021): each scalar feature is
 projected into its own d_model embedding ("feature tokenizer"), a learned [CLS] token
 is prepended, and a standard Transformer encoder attends across features before a
