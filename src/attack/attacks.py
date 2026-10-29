@@ -4,6 +4,8 @@
   decoupled  two stages (Kuppa & Le-Khac-style baseline): classifier evasion for the first
              half of the step budget, then drift reduction alone for the second half
   joint      one objective optimized throughout: CE + lam * drift proxy
+  decoupled_keep  stronger decoupled baseline: same two stages, but a drift step is undone
+             for any flow it would push back out of the benign class
 
 All modes share the same step budget and the same constraint projection.
 """
@@ -13,6 +15,7 @@ import torch.nn.functional as F
 from .drift import PROXIES, representation
 
 MODES = ("pgd", "decoupled", "joint")
+ALL_MODES = MODES + ("decoupled_keep",)
 
 
 def run_attack(
@@ -30,7 +33,7 @@ def run_attack(
     proxy: str,
     representation_kind: str,
 ) -> torch.Tensor:
-    if mode not in MODES:
+    if mode not in ALL_MODES:
         raise ValueError(f"unknown mode: {mode}")
     proxy_fn = PROXIES[proxy]
     model.eval()
@@ -58,4 +61,8 @@ def run_attack(
             z_prev = z.detach()
             z = z_prev - step_size * grad.sign() * row_mask
             z = torch.where(row_mask, constraints.project(z, z_window, eps, z_prev), z_window)
+            if mode == "decoupled_keep" and t >= steps // 2:
+                was_benign = logits.argmax(dim=1) == benign_idx
+                lost = adv_mask & was_benign & (model(z).argmax(dim=1) != benign_idx)
+                z = torch.where(lost.unsqueeze(1), z_prev, z)
     return z.detach()

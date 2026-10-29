@@ -67,7 +67,7 @@ def main() -> None:
     test_X, test_y = test["X"], test["y"]
 
     a, d, e = cfg["attack"], cfg["drift"], cfg["eval"]
-    names = ("clean",) + MODES
+    names = ("clean",) + tuple(e.get("modes", MODES))
     results = {}
 
     for fraction in a["attacker_fractions"]:
