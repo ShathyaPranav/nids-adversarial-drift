@@ -2,11 +2,13 @@
 constructor is (n_features, n_classes, **hyperparameters) and whose forward maps a float
 tensor of shape (batch, n_features) to logits of shape (batch, n_classes); then add it below.
 """
-from .transformer import FlowTransformer
 from .cnn import FlowCNN
+from .lstm import FlowLSTM
+from .transformer import FlowTransformer
 
 MODELS = {
     "cnn": FlowCNN,
+    "lstm": FlowLSTM,
     "transformer": FlowTransformer,
 }
 

@@ -1,0 +1,17 @@
+model:
+  name: lstm
+  hidden_size: 128
+  num_layers: 2
+  dropout: 0.2
+
+data:
+  processed_dir: data/processed/
+
+train:
+  batch_size: 256
+  lr: 0.001
+  weight_decay: 0.0001
+  epochs: 30
+  patience: 5
+  checkpoint_path: checkpoints/lstm_best.pt
+  seed: 42
