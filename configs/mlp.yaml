@@ -1,6 +1,6 @@
 
 data:
-  processed_dir: data/shared_processed
+  processed_dir: data/processed
 
 model:
   name: mlp
