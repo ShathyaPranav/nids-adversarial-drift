@@ -67,6 +67,12 @@ Attack numbers are at an attacker fraction of 0.10 (mean over 3 seeds x 10 windo
 - The joint attack does not lower the drift detection rate compared with PGD. Detection mostly
   depends on how many flows in a window are perturbed (almost never flagged at 5%, always at 15%).
 - No attack produced a constraint violation, and clean windows were never flagged.
+- Ablation on the Transformer (`results/ablation/transformer/`): changing lambda (1 to 1000), the
+  proxy (quantile matching or MMD) or the drift representation never made the joint attack harder
+  to detect than PGD. A stronger decoupled attack that reverts drift steps which would undo an
+  evasion was flagged in 20% of windows at a 10% attacker fraction (PGD 57%, joint 63%) while still
+  evading 30% of the time. The detector mostly reacts to flows the attack failed to evade, which are
+  left near the decision boundary with slightly lowered classifier confidence.
 
 ## Attack framework
 
