@@ -1,0 +1,301 @@
+{
+  "config": {
+    "attack": {
+      "attacker_fractions": [
+        0.1,
+        0.15
+      ],
+      "eps": 0.5,
+      "lam": 100.0,
+      "proxy": "marginal",
+      "representation": "features",
+      "step_size": 0.05,
+      "steps": 40
+    },
+    "benign_class": "BENIGN",
+    "checkpoint": "checkpoints/transformer_best.pt",
+    "constraints": {
+      "immutable_contains": [
+        "Flag",
+        "Bwd"
+      ],
+      "immutable_exact": [
+        "Dst Port",
+        "Protocol",
+        "ICMP Code",
+        "ICMP Type",
+        "FWD Init Win Bytes",
+        "Bwd Init Win Bytes",
+        "Fwd Seg Size Min"
+      ]
+    },
+    "drift": {
+      "alpha": 0.05,
+      "n_reference": 2000,
+      "window_size": 1000
+    },
+    "eval": {
+      "modes": [
+        "joint"
+      ],
+      "n_windows": 10,
+      "out": "results\\ablation\\transformer\\repr_features_lam_100.json",
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    "processed_dir": "data/processed"
+  },
+  "results": {
+    "0.1": {
+      "summary": {
+        "clean": {
+          "evasion": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "drift": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "rejected_features": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "confidence_rejected": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "violation": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mean_abs_change": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "n_perturbed": {
+            "mean": 83.43333333333334,
+            "std": 0.4642796092394732
+          }
+        },
+        "joint": {
+          "evasion": {
+            "mean": 0.4480041215817134,
+            "std": 0.02430676620438393
+          },
+          "drift": {
+            "mean": 0.5666666666666668,
+            "std": 0.23570226039551584
+          },
+          "rejected_features": {
+            "mean": 0.5,
+            "std": 0.7071067811865476
+          },
+          "confidence_rejected": {
+            "mean": 0.5333333333333333,
+            "std": 0.1885618083164127
+          },
+          "violation": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mean_abs_change": {
+            "mean": 0.28108816444873813,
+            "std": 0.008800316869855577
+          },
+          "n_perturbed": {
+            "mean": 83.43333333333334,
+            "std": 0.4642796092394732
+          }
+        }
+      },
+      "per_seed": {
+        "clean": [
+          {
+            "evasion": 0.0,
+            "drift": 0.0,
+            "rejected_features": 0.0,
+            "confidence_rejected": 0.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.0,
+            "n_perturbed": 83.9
+          },
+          {
+            "evasion": 0.0,
+            "drift": 0.0,
+            "rejected_features": 0.0,
+            "confidence_rejected": 0.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.0,
+            "n_perturbed": 83.6
+          },
+          {
+            "evasion": 0.0,
+            "drift": 0.0,
+            "rejected_features": 0.0,
+            "confidence_rejected": 0.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.0,
+            "n_perturbed": 82.8
+          }
+        ],
+        "joint": [
+          {
+            "evasion": 0.43632650971412656,
+            "drift": 0.4,
+            "rejected_features": 0.0,
+            "confidence_rejected": 0.4,
+            "violation": 0.0,
+            "mean_abs_change": 0.2875129997730255,
+            "n_perturbed": 83.9
+          },
+          {
+            "evasion": 0.4818420946598053,
+            "drift": 0.4,
+            "rejected_features": 0.0,
+            "confidence_rejected": 0.4,
+            "violation": 0.0,
+            "mean_abs_change": 0.2686448484659195,
+            "n_perturbed": 83.6
+          },
+          {
+            "evasion": 0.4258437603712082,
+            "drift": 0.9,
+            "rejected_features": 1.5,
+            "confidence_rejected": 0.8,
+            "violation": 0.0,
+            "mean_abs_change": 0.2871066451072693,
+            "n_perturbed": 82.8
+          }
+        ]
+      }
+    },
+    "0.15": {
+      "summary": {
+        "clean": {
+          "evasion": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "drift": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "rejected_features": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "confidence_rejected": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "violation": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mean_abs_change": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "n_perturbed": {
+            "mean": 125.36666666666667,
+            "std": 0.6342099196813475
+          }
+        },
+        "joint": {
+          "evasion": {
+            "mean": 0.4218048473199209,
+            "std": 0.019879739894007355
+          },
+          "drift": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "rejected_features": {
+            "mean": 3.5333333333333337,
+            "std": 0.9104333522498441
+          },
+          "confidence_rejected": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "violation": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mean_abs_change": {
+            "mean": 0.2623274693886439,
+            "std": 0.007425857823945388
+          },
+          "n_perturbed": {
+            "mean": 125.36666666666667,
+            "std": 0.6342099196813475
+          }
+        }
+      },
+      "per_seed": {
+        "clean": [
+          {
+            "evasion": 0.0,
+            "drift": 0.0,
+            "rejected_features": 0.0,
+            "confidence_rejected": 0.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.0,
+            "n_perturbed": 126.0
+          },
+          {
+            "evasion": 0.0,
+            "drift": 0.0,
+            "rejected_features": 0.0,
+            "confidence_rejected": 0.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.0,
+            "n_perturbed": 125.6
+          },
+          {
+            "evasion": 0.0,
+            "drift": 0.0,
+            "rejected_features": 0.0,
+            "confidence_rejected": 0.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.0,
+            "n_perturbed": 124.5
+          }
+        ],
+        "joint": [
+          {
+            "evasion": 0.42387873530387876,
+            "drift": 1.0,
+            "rejected_features": 2.7,
+            "confidence_rejected": 1.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.2655793532729149,
+            "n_perturbed": 126.0
+          },
+          {
+            "evasion": 0.4450491786003113,
+            "drift": 1.0,
+            "rejected_features": 3.1,
+            "confidence_rejected": 1.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.2520537540316582,
+            "n_perturbed": 125.6
+          },
+          {
+            "evasion": 0.3964866280555725,
+            "drift": 1.0,
+            "rejected_features": 4.8,
+            "confidence_rejected": 1.0,
+            "violation": 0.0,
+            "mean_abs_change": 0.26934930086135866,
+            "n_perturbed": 124.5
+          }
+        ]
+      }
+    }
+  }
+}
