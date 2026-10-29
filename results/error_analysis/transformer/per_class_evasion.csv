@@ -1,0 +1,16 @@
+class,n_attacked,evasion_rate,violations
+Web Attack - SQL,3,1.0,0
+Web Attack - Brute Force,35,1.0,0
+Infiltration - Dropbox Download,1,1.0,0
+DoS Hulk,300,0.9733333333333334,0
+Botnet Ares,300,0.97,0
+DDoS-HOIC,300,0.32666666666666666,0
+DoS Slowloris,300,0.2,0
+DDoS-LOIC-HTTP,300,0.14,0
+Infiltration - Communication Victim Attacker,31,0.06451612903225806,0
+Infiltration - NMAP Portscan,300,0.06,0
+DoS GoldenEye,300,0.023333333333333334,0
+SSH-BruteForce,300,0.01,0
+DDoS-LOIC-UDP,300,0.0,0
+FTP-BruteForce,9,0.0,0
+Web Attack - XSS,17,0.0,0
