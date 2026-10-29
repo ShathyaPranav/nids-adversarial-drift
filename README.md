@@ -1,10 +1,8 @@
 # Robustness of DL Architectures to Joint Adversarial-Evasion and Concept-Drift Attacks in NIDS
 
-ICT-4442 Deep Learning Project. See [`ICT4442_Synopsis.docx`](ICT4442_Synopsis.docx) for the full proposal.
+ICT-4442 Deep Learning Project. See `ICT4442_Synopsis.docx` for the full proposal.
 
-This branch of the repo covers **Model 4: Transformer classifier** (self-attention over CICFlowMeter
-flow features), trained and evaluated on CSE-CIC-IDS2018 under the shared team protocol: same
-train/val/test split, same clean metrics, same adversarial stress-test.
+This branch of the repo covers **Model: MLP classifier** (fully connected feed-forward neural network over CICFlowMeter flow features), trained and evaluated on CSE-CIC-IDS2018 under the shared team protocol: same train/val/test split, same clean metrics, same adversarial stress-test.
 
 ## Dataset
 
@@ -13,12 +11,13 @@ CSE-CIC-IDS2018, using Liu et al. (2022)'s **corrected release** (`CSECICIDS2018
 (`--sample`) is only used for quick pipeline checks; it has a different schema.
 
 `src/data/preprocess.py` streams the zip and builds a capped sample:
-- max 200k rows per class (uniform random), all rows kept for smaller classes
-- identifier columns dropped (id, Flow ID, IPs, Src Port, Timestamp) -> 83 features
-- `- Attempted` labels merged into the parent class (`--attempted merge`); FTP-BruteForce
-  exists only as "Attempted" in this release, so `drop` would remove that class
-- NaN/Inf and exact-duplicate flows removed, signed log1p + standardization
-- result: ~1.11M rows, 16 classes, stratified 70/15/15 split
+
+* max 200k rows per class (uniform random), all rows kept for smaller classes
+* identifier columns dropped (id, Flow ID, IPs, Src Port, Timestamp) → 83 features
+* `- Attempted` labels merged into the parent class (`--attempted merge`)
+* NaN/Inf and exact-duplicate flows removed
+* signed log1p + standardization
+* result: ~1.11M rows, 16 classes, stratified 70/15/15 split
 
 Capping changes the benign/attack ratio versus real traffic.
 
@@ -26,81 +25,131 @@ Capping changes the benign/attack ratio versus real traffic.
 
 ```bash
 pip install -r requirements.txt
-python src/data/download.py --corrected   # ~10.4 GB, parallel + resumable
+python src/data/download.py --corrected
 python src/data/preprocess.py --cap 200000
-python src/train.py --config configs/transformer.yaml
-python src/evaluate.py --checkpoint checkpoints/transformer_best.pt
+
+python src/train.py --config configs/mlp.yaml
+python src/evaluate.py --checkpoint checkpoints/mlp_best.pt
+python src/run_attack.py --config configs/attack_mlp.yaml
 ```
 
-## Results so far (Model 4, baseline run 1, clean data only)
+## Model Architecture
+
+Input: 83 flow features
+
+```
+83
+↓
+Linear(83 → 256)
+BatchNorm
+ReLU
+Dropout(0.3)
+
+↓
+Linear(256 → 128)
+BatchNorm
+ReLU
+Dropout(0.3)
+
+↓
+Linear(128 → 64)
+ReLU
+
+↓
+Linear(64 → 16)
+```
+
+Output: 16-class intrusion classification logits.
+
+Training uses the shared repository pipeline with standard CrossEntropyLoss, AdamW optimizer, early stopping, and no class weighting or oversampling.
+
+## Results (MLP, shared pipeline)
+
+### Validation Set
 
 | split | accuracy | macro-F1 |
-|-------|----------|----------|
-| val   | 0.9998   | 0.928    |
-| test  | 0.9997   | 0.899    |
+| ----- | -------- | -------- |
+| val   | 0.9996   | 0.9471   |
 
-All classes with >=1,000 test samples have F1 >= 0.998. Macro-F1 is pulled down by the
-smallest classes: Infiltration - Dropbox Download (17 test samples, F1 0.11), Web Attack -
-SQL (8 samples, F1 0.50), Web Attack - Brute Force (40 samples, F1 0.89). With single-digit
-to tens of test samples per class these numbers are noisy, so report them per class.
+### Test Set
 
-Caveat: the split is random over flows, so near-identical flows from the same attack session
-can land in both train and test. That inflates scores relative to a temporal or per-day split,
-which matters for the concept-drift part of the project.
+| split | accuracy | macro-F1 |
+| ----- | -------- | -------- |
+| test  | 0.9995   | 0.9006   |
 
-## Adversarial stress-test (first run, Transformer only)
+All classes with >=1,000 test samples achieve near-perfect performance. Macro-F1 is mainly affected by extremely small classes such as:
 
-`python src/run_attack.py --config configs/attack.yaml` perturbs a share of the attack flows
-in each 1,000-flow test window and compares three attacks with the same step budget:
-`pgd` (classifier only), `decoupled` (classifier, then drift, in two stages) and `joint`
-(classifier loss + lambda * drift proxy in one objective). The drift detector is a
-Bonferroni-corrected KS test per feature plus one on classifier confidence.
+* Infiltration - Dropbox Download (17 samples, F1 = 0.105)
+* Web Attack - SQL (8 samples, F1 = 0.500)
+* Web Attack - Brute Force (40 samples, F1 = 0.854)
 
-Constraints (`src/attack/constraints.py`): 43 of 83 features are mutable (attacker-side packet
-sizes, counts, timing); destination port, protocol, TCP flags and responder-side features are
-fixed. Budget eps = 0.5 standardized units, no negative values, Min <= Mean <= Max kept.
+With only a handful of samples, these estimates are highly variable and should be interpreted individually rather than relying solely on Macro-F1.
 
-Mean over 3 seeds x 10 windows (lambda = 10, marginal proxy):
+Caveat: the split is random over flows, so near-identical flows from the same attack session can appear in both train and test sets, potentially inflating performance compared with a temporal or per-day split.
 
-| perturbed flows / window | attack | evasion | drift detected | KS rejections |
-|---|---|---|---|---|
-| ~42 (5%)  | pgd / decoupled / joint | 0.45 / 0.20 / 0.45 | 0.07 / 0.00 / 0.07 | 0.2 / 0.0 / 0.2 |
-| ~83 (10%) | pgd / decoupled / joint | 0.45 / 0.17 / 0.46 | 0.57 / 0.57 / 0.63 | 1.0 / 0.9 / 0.5 |
-| ~125 (15%) | pgd / decoupled / joint | 0.45 / 0.16 / 0.45 | 1.00 / 1.00 / 1.00 | 6.7 / 4.2 / 4.5 |
-| ~167 (20%) | pgd / decoupled / joint | 0.46 / 0.16 / 0.46 | 1.00 / 1.00 / 1.00 | 17.7 / 7.6 / 10.9 |
+## Adversarial Stress-Test
 
-Constraint violation rate is 0 for every attack; clean windows are never flagged.
+`python src/run_attack.py --config configs/attack_mlp.yaml`
 
-What this shows so far:
-- The joint attack keeps PGD's evasion rate (~0.45); the decoupled attack loses about two
-  thirds of it because its drift stage undoes the evasion.
-- The joint attack does not yet lower the window-level drift detection rate compared with
-  plain PGD. It triggers fewer per-feature KS rejections, but the confidence test still fires.
-- Whether a window is flagged depends mainly on how many flows are perturbed.
+The shared attack pipeline perturbs a proportion of attack flows within each 1,000-flow test window and evaluates:
 
-Not done yet: lambda and proxy/representation ablations, the other three architectures.
-Limits: constraints do not enforce exact identities between features (total = mean x count)
-or integer counts, so a valid adversarial flow is plausible rather than proven realizable.
+* `pgd` (classifier objective only)
+* `decoupled` (classifier then drift objective)
+* `joint` (classifier + drift objective)
+
+Constraints:
+
+* 43 of 83 features are mutable
+* destination port, protocol, TCP flags and responder-side features remain fixed
+* ε = 0.5 standardized units
+* no negative values allowed
+* Min ≤ Mean ≤ Max ordering preserved
+
+Mean over 3 seeds × 10 windows:
+
+| perturbed flows / window | attack                  | evasion               | drift detected        | KS rejections     |
+| ------------------------ | ----------------------- | --------------------- | --------------------- | ----------------- |
+| ~42 (5%)                 | pgd / decoupled / joint | 0.841 / 0.052 / 0.840 | 0.067 / 0.000 / 0.067 | 0.2 / 0.0 / 0.2   |
+| ~84 (10%)                | pgd / decoupled / joint | 0.841 / 0.015 / 0.843 | 1.000 / 0.867 / 1.000 | 3.6 / 1.6 / 1.8   |
+| ~125 (15%)               | pgd / decoupled / joint | 0.846 / 0.008 / 0.845 | 1.000 / 1.000 / 1.000 | 14.3 / 4.9 / 11.7 |
+| ~167 (20%)               | pgd / decoupled / joint | 0.847 / 0.006 / 0.849 | 1.000 / 1.000 / 1.000 | 22.0 / 6.2 / 17.9 |
+
+Constraint violation rate is 0 for all attacks; clean windows are never flagged.
+
+### Key Observations
+
+* PGD and Joint attacks achieve high evasion rates (~84%).
+* Decoupled attacks substantially reduce evasion effectiveness.
+* Drift detection becomes highly reliable once ≥10% of flows are perturbed.
+* No attack generated invalid flows under the implemented constraints.
+* Joint optimization maintains evasion performance while producing similar drift-detection behaviour to PGD.
 
 ## Layout
 
-```
+```text
 src/
   data/
-    download.py     # fetch raw or corrected CSE-CIC-IDS2018
-    preprocess.py    # clean, encode, stratified split (keeps all rare-class rows)
-    dataset.py       # PyTorch Dataset/DataLoader
+    download.py
+    preprocess.py
+    dataset.py
+
   models/
-    transformer.py   # Model 4: self-attention flow classifier
+    mlp.py
+
   attack/
-    constraints.py   # mutable/immutable features, budget, validity checks
-    drift.py         # KS drift detector + differentiable proxies
-    attacks.py       # pgd, decoupled, joint
-  run_attack.py      # adversarial stress-test
+    constraints.py
+    drift.py
+    attacks.py
+
+  run_attack.py
+
   utils/
-    metrics.py        # macro-F1 + per-class rare-class reporting
+    metrics.py
+
   train.py
   evaluate.py
+
 configs/
-  transformer.yaml
+  mlp.yaml
+  attack_mlp.yaml
 ```

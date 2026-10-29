@@ -1,0 +1,19 @@
+
+data:
+  processed_dir: data/shared_processed
+
+model:
+  name: mlp
+  hidden1: 256
+  hidden2: 128
+  hidden3: 64
+  dropout: 0.3
+
+train:
+  batch_size: 512
+  epochs: 20
+  lr: 0.0003
+  weight_decay: 0.00001
+  patience: 4
+  seed: 42
+  checkpoint_path: checkpoints/mlp_best.pt

@@ -4,9 +4,11 @@ tensor of shape (batch, n_features) to logits of shape (batch, n_classes); then 
 """
 from .cnn import FlowCNN
 from .lstm import FlowLSTM
+from .mlp import IntrusionMLP
 from .transformer import FlowTransformer
 
 MODELS = {
+    "mlp": IntrusionMLP,
     "cnn": FlowCNN,
     "lstm": FlowLSTM,
     "transformer": FlowTransformer,
