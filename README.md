@@ -1,8 +1,8 @@
 # nids-adversarial-drift
 
-our ICT-4442 deep learning mini project. full title is "robustness of DL architectures to joint adversarial-evasion and concept-drift attacks in NIDS"... basically we train four models on the same network flow data, then attack all of them the same way. the attack tries to sneak attack flows past the classifier and past a drift detector at the same time.
+ICT-4442 deep learning mini project with full title "Robustness of DL architectures to joint adversarial-evasion and concept-drift attacks in NIDS"... we train four models on the same network flow data, then attack all of them the same way. the attack tries to sneak attack flows past the classifier and past a drift detector at the same time.
 
-| model | who | code |
+| Model | Who | Code |
 |---|---|---|
 | MLP | Sushant Shekhar Sinha | `src/models/mlp.py`, `configs/mlp.yaml` |
 | 1D-CNN | Anne George | `src/models/cnn.py`, `configs/cnn.yaml` |
@@ -22,7 +22,7 @@ CSE-CIC-IDS2018, but the corrected version from Liu et al. (2022), not the origi
 - signed log1p + standardisation, fitted on train only
 - stratified 70/15/15 split, seed 42 (778,917 / 166,911 / 166,911 flows)
 
-if you rerun it you get the same files byte for byte, and all four models train on those exact files. one thing to keep in mind: the capping means the benign to attack ratio isn't what real traffic looks like.
+if you rerun it you get the same files byte for byte, and all four models train on those exact files. One thing to keep in mind is that, the capping means the benign to attack ratio isn't what real traffic looks like.
 
 ## running it
 
@@ -31,7 +31,7 @@ pip install -r requirements.txt
 python src/data/download.py --corrected        # 10.4 GB, parallel and resumable
 python src/data/preprocess.py --cap 200000
 
-python src/train.py --config configs/<model>.yaml          # mlp | cnn | lstm | transformer
+python src/train.py --config configs/<model>.yaml          # substitute <model> with mlp | cnn | lstm | transformer
 python src/evaluate.py --checkpoint checkpoints/<model>_best.pt
 python src/run_attack.py --config configs/attack_<model>.yaml
 
@@ -53,12 +53,12 @@ full tables are in [`results/comparison.md`](results/comparison.md) and the figu
 
 what we found:
 
-- on clean data you basically can't tell the models apart. every one gets F1 ≥ 0.993 on all nine classes that have 1,000+ test flows. the all-class macro-F1 only drops because of tiny classes with 8 to 40 test flows (Dropbox Download, Web Attack SQL, FTP-BruteForce)
+- on clean data you basically can't tell the models apart. Every one gets F1 ≥ 0.993 on all nine classes that have 1,000+ test flows. The all-class macro-F1 only drops because of tiny classes with 8 to 40 test flows (Dropbox Download, Web Attack SQL, FTP-BruteForce)
 - under attack it's a different story... the 1D-CNN gets evaded ~24% of the time, the Transformer 45%, and the MLP and LSTM around 85%
-- the joint attack evades about as well as PGD. the decoupled one loses most of its evasion because the drift stage pretty much undoes it
-- joint doesn't get flagged by the drift detector any less than PGD does. detection mostly comes down to how many flows in a window are perturbed (almost never flagged at 5%, always flagged at 15%)
-- zero constraint violations in any attack, and clean windows never got flagged
-- ablation on the Transformer (`results/ablation/transformer/`): we tried lambda from 1 to 1000, quantile matching vs MMD as the proxy, and different drift representations. none of it made joint harder to detect than PGD. what did work was a stronger decoupled attack that reverts drift steps if they'd undo an evasion... that one got flagged in only 20% of windows at a 10% attacker fraction (PGD 57%, joint 63%) and still evaded 30% of the time. turns out the detector mostly picks up the flows the attack *failed* on, since those end up sitting near the decision boundary with slightly lower confidence
+- the joint attack evades about as well as PGD. The decoupled one loses most of its evasion because the drift stage pretty much undoes it
+- joint doesn't get flagged by the drift detector any less than PGD does. Detection mostly comes down to how many flows in a window are perturbed (almost never flagged at 5%, always flagged at 15%)
+- zero constraint violations in any attack and clean windows never got flagged
+- ablation on the Transformer (`results/ablation/transformer/`): we tried lambda from 1 to 1000, quantile matching vs MMD as the proxy and different drift representations. None of it made joint harder to detect than PGD. What did work was a stronger decoupled attack that reverts drift steps if they'd undo an evasion... that one got flagged in only 20% of windows at a 10% attacker fraction (PGD 57%, joint 63%) and still evaded 30% of the time. turns out the detector mostly picks up the flows the attack *failed* on, since those end up sitting near the decision boundary with slightly lower confidence
 
 ## attack framework
 
@@ -70,7 +70,7 @@ everything's in `src/attack/` and it's the same for every model:
 
 ## limitations
 
-- the split is random over flows, so similar flows from one attack session can end up in both train and test. it also doesn't model drift over time
+- the split is random over flows, so similar flows from one attack session can end up in both train and test. It also doesn't model drift over time
 - the LSTM reads the 83 features of a single flow as a sequence... not flows over time
 - each model was only trained once
 - the constraints don't enforce exact relations between features (like total = mean x count) or integer counts, so the adversarial flows are plausible but we haven't proven they're realisable
