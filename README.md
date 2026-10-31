@@ -1,35 +1,30 @@
-# Robustness of DL Architectures to Joint Adversarial-Evasion and Concept-Drift Attacks in NIDS
+# nids-adversarial-drift
 
-ICT-4442 Deep Learning mini project. We train four architectures on the same network-flow data
-and then attack each one with the same constrained adversarial stress test, which tries to slip
-attack flows past the classifier and past a statistical drift detector at the same time.
+our ICT-4442 deep learning mini project. full title is "robustness of DL architectures to joint adversarial-evasion and concept-drift attacks in NIDS"... basically we train four models on the same network flow data, then attack all of them the same way. the attack tries to sneak attack flows past the classifier and past a drift detector at the same time.
 
-| Model | Owner | Code |
+| model | who | code |
 |---|---|---|
 | MLP | Sushant Shekhar Sinha | `src/models/mlp.py`, `configs/mlp.yaml` |
 | 1D-CNN | Anne George | `src/models/cnn.py`, `configs/cnn.yaml` |
 | LSTM | Siddhant Singh | `src/models/lstm.py`, `configs/lstm.yaml` |
 | Transformer | Shathya Pranav S R K | `src/models/transformer.py`, `configs/transformer.yaml` |
 
-Data pipeline, shared training/evaluation scripts and the attack framework: Shathya Pranav S R K.
+data pipeline, the shared train/eval scripts and the attack framework were done by Shathya.
 
-## Dataset
+## dataset
 
-CSE-CIC-IDS2018, using the corrected release by Liu et al. (2022) (`CSECICIDS2018_improved.zip`,
-10.4 GB, 10 daily CSVs, about 63.2M flows, 94% benign). `src/data/preprocess.py` streams the zip
-and builds the shared split:
+CSE-CIC-IDS2018, but the corrected version from Liu et al. (2022), not the original (`CSECICIDS2018_improved.zip`, 10.4 GB, 10 daily csvs, ~63.2M flows, 94% benign). `src/data/preprocess.py` streams through the zip and builds the split everyone uses:
 
-- identifier columns dropped (id, Flow ID, IPs, source port, timestamp), leaving 83 flow features
-- "Attempted" labels merged into their parent class (FTP-BruteForce only exists as "Attempted")
-- NaN/Inf rows and exact duplicates removed
-- each class capped at 200,000 flows, smaller classes kept whole: about 1.11M flows, 16 classes
-- signed log1p and standardisation fitted on the training split only
-- stratified 70/15/15 split with seed 42 (778,917 / 166,911 / 166,911 flows)
+- drops the id columns (id, Flow ID, IPs, source port, timestamp), so 83 flow features are left
+- merges "Attempted" labels into their parent class (FTP-BruteForce only shows up as "Attempted" anyway)
+- removes NaN/Inf rows and exact duplicates
+- caps each class at 200,000 flows and keeps smaller classes whole... ends up as ~1.11M flows, 16 classes
+- signed log1p + standardisation, fitted on train only
+- stratified 70/15/15 split, seed 42 (778,917 / 166,911 / 166,911 flows)
 
-Re-running the script reproduces the files byte for byte, and all four models use the same files.
-Capping changes the benign to attack ratio compared with real traffic.
+if you rerun it you get the same files byte for byte, and all four models train on those exact files. one thing to keep in mind: the capping means the benign to attack ratio isn't what real traffic looks like.
 
-## Reproducing
+## running it
 
 ```bash
 pip install -r requirements.txt
@@ -45,58 +40,42 @@ python src/error_analysis.py --checkpoint checkpoints/transformer_best.pt --tag 
 python src/run_ablation.py --checkpoint checkpoints/transformer_best.pt --tag transformer
 ```
 
-## Results
+## results
 
-Full tables are in [`results/comparison.md`](results/comparison.md), figures in `results/figures/`.
-Attack numbers are at an attacker fraction of 0.10 (mean over 3 seeds x 10 windows of 1,000 flows).
+full tables are in [`results/comparison.md`](results/comparison.md) and the figures are in `results/figures/`. attack numbers below are at attacker fraction 0.10 (mean over 3 seeds x 10 windows of 1,000 flows).
 
-| Model | Test accuracy | Macro-F1 (16 classes) | Evasion PGD | Evasion decoupled | Evasion joint |
+| model | test accuracy | macro-F1 (16 classes) | evasion PGD | evasion decoupled | evasion joint |
 |---|---|---|---|---|---|
 | MLP | 0.9995 | 0.901 | 0.84 | 0.02 | 0.84 |
 | 1D-CNN | 0.9994 | 0.889 | 0.24 | 0.00 | 0.25 |
 | LSTM | 0.9989 | 0.813 | 0.86 | 0.22 | 0.85 |
 | Transformer | 0.9997 | 0.899 | 0.45 | 0.17 | 0.46 |
 
-- Clean accuracy hardly separates the models. Every model has F1 of at least 0.993 on all nine
-  classes with 1,000 or more test flows, and the all-class macro-F1 is pulled down by classes with
-  8 to 40 test flows (Dropbox Download, Web Attack SQL, FTP-BruteForce).
-- Robustness separates them a lot: the 1D-CNN is evaded about 24% of the time, the Transformer
-  45%, the MLP and LSTM about 85%.
-- The joint attack keeps PGD's evasion rate, while the decoupled attack loses most of it because
-  its drift stage undoes the evasion.
-- The joint attack does not lower the drift detection rate compared with PGD. Detection mostly
-  depends on how many flows in a window are perturbed (almost never flagged at 5%, always at 15%).
-- No attack produced a constraint violation, and clean windows were never flagged.
-- Ablation on the Transformer (`results/ablation/transformer/`): changing lambda (1 to 1000), the
-  proxy (quantile matching or MMD) or the drift representation never made the joint attack harder
-  to detect than PGD. A stronger decoupled attack that reverts drift steps which would undo an
-  evasion was flagged in 20% of windows at a 10% attacker fraction (PGD 57%, joint 63%) while still
-  evading 30% of the time. The detector mostly reacts to flows the attack failed to evade, which are
-  left near the decision boundary with slightly lowered classifier confidence.
+what we found:
 
-## Attack framework
+- on clean data you basically can't tell the models apart. every one gets F1 ≥ 0.993 on all nine classes that have 1,000+ test flows. the all-class macro-F1 only drops because of tiny classes with 8 to 40 test flows (Dropbox Download, Web Attack SQL, FTP-BruteForce)
+- under attack it's a different story... the 1D-CNN gets evaded ~24% of the time, the Transformer 45%, and the MLP and LSTM around 85%
+- the joint attack evades about as well as PGD. the decoupled one loses most of its evasion because the drift stage pretty much undoes it
+- joint doesn't get flagged by the drift detector any less than PGD does. detection mostly comes down to how many flows in a window are perturbed (almost never flagged at 5%, always flagged at 15%)
+- zero constraint violations in any attack, and clean windows never got flagged
+- ablation on the Transformer (`results/ablation/transformer/`): we tried lambda from 1 to 1000, quantile matching vs MMD as the proxy, and different drift representations. none of it made joint harder to detect than PGD. what did work was a stronger decoupled attack that reverts drift steps if they'd undo an evasion... that one got flagged in only 20% of windows at a 10% attacker fraction (PGD 57%, joint 63%) and still evaded 30% of the time. turns out the detector mostly picks up the flows the attack *failed* on, since those end up sitting near the decision boundary with slightly lower confidence
 
-`src/attack/` holds the stress test used for every model:
+## attack framework
 
-- `constraints.py`: 43 of 83 features are mutable (attacker-side sizes, counts, timing). Destination
-  port, protocol, TCP flags and responder-side features are fixed. Budget of 0.5 standardised units
-  per feature, no negative values, and Min <= Mean <= Max kept within each feature family.
-- `drift.py`: Bonferroni-corrected KS test per feature plus one on classifier confidence, and the
-  differentiable proxies the attacker optimises (per-feature quantile matching, or MMD).
-- `attacks.py`: `pgd` (classifier only), `decoupled` (classifier, then drift), `joint`
-  (classifier loss + lambda x drift proxy) and `decoupled_keep` (decoupled, but drift steps that
-  undo an evasion are reverted). All use the same 40-step budget and projection.
+everything's in `src/attack/` and it's the same for every model:
 
-## Limitations
+- `constraints.py`: 43 of the 83 features can be changed (stuff the attacker controls like sizes, counts, timing). destination port, protocol, TCP flags and anything from the responder side stay fixed. budget is 0.5 standardised units per feature, nothing goes negative, and Min <= Mean <= Max has to hold inside each feature family
+- `drift.py`: KS test per feature plus one on classifier confidence, with Bonferroni correction. also has the differentiable proxies the attacker actually optimises (per-feature quantile matching, or MMD)
+- `attacks.py`: `pgd` (classifier only), `decoupled` (classifier first, then drift), `joint` (classifier loss + lambda x drift proxy) and `decoupled_keep` (decoupled, but drift steps that would undo an evasion get reverted). all of them get the same 40-step budget and projection
 
-- The split is random over flows, so similar flows from one attack session can land in both
-  train and test, and it does not model drift over time.
-- The LSTM reads the 83 features of one flow as a sequence, not flows in time.
-- Each model is one training run.
-- The constraints do not enforce exact relations between features (for example total = mean x
-  count) or integer counts, so adversarial flows are plausible but not proven realisable.
+## limitations
 
-## Layout
+- the split is random over flows, so similar flows from one attack session can end up in both train and test. it also doesn't model drift over time
+- the LSTM reads the 83 features of a single flow as a sequence... not flows over time
+- each model was only trained once
+- the constraints don't enforce exact relations between features (like total = mean x count) or integer counts, so the adversarial flows are plausible but we haven't proven they're realisable
+
+## layout
 
 ```
 configs/            model and attack configs
